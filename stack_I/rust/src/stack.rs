@@ -1,38 +1,49 @@
-pub struct Stack<V> {
-    data: Vec<V>,
+use std::{panic, sync::Mutex};
+
+pub struct Stack<V: Clone> {
+    data: Mutex<Vec<V>>,
 }
 
-impl<V> Stack<V> {
+impl<V: Clone> Stack<V> {
     pub fn size(&self) -> usize {
-        self.data.len()
+        self.data.lock().unwrap().len()
     }
 
     pub fn is_empty(&self) -> bool {
-        self.data.len() == 0
+        self.size() == 0
     }
 
     pub fn push(&mut self, value: V) {
-        self.data.push(value);
+        self.data.lock().unwrap().push(value);
     }
 
     pub fn pop(&mut self) {
-        self.data.pop();
+        self.data.lock().unwrap().pop();
     }
 
-    pub fn top(&mut self) -> Option<&V> {
-        self.data.last()
+    pub fn top(&mut self) -> V {
+        match self.data.lock().unwrap().last().cloned() {
+            Some(x) => x,
+            None => panic!(),
+        }
+    }
+
+    pub fn memory(&self) -> usize {
+        std::mem::size_of_val(&*self.data.lock().unwrap().clone())
     }
 }
 
-pub fn new<V>() -> Stack<V> {
-    return Stack { data: vec![] };
+pub fn new<V: Clone>() -> Stack<V> {
+    return Stack {
+        data: Mutex::new(vec![]),
+    };
 }
 
 #[cfg(test)]
 mod tests {
     use crate::stack;
 
-    #[derive(Debug)]
+    #[derive(Clone, Debug)]
     struct Email<'a> {
         from: &'a str,
         to: &'a str,
@@ -54,7 +65,7 @@ mod tests {
 
         assert_eq!(email_income.size(), 2);
 
-        let expected = email_income.top().expect("missing expected");
+        let expected = email_income.top();
 
         assert_eq!(expected.from, "c");
         assert_eq!(expected.to, "d");
@@ -64,18 +75,18 @@ mod tests {
     fn memory_usage() {
         let mut email_income = stack::new::<Email>();
 
-        assert_eq!(std::mem::size_of_val(&*email_income.data), 0);
+        assert_eq!(email_income.memory(), 0);
 
         for _n in 0..1_000_000 {
             email_income.push(Email { from: "a", to: "b" });
         }
 
-        assert_eq!(std::mem::size_of_val(&*email_income.data), 32000000);
+        assert_eq!(email_income.memory(), 32000000);
 
         for _n in 0..1_000_000 {
             email_income.pop();
         }
 
-        assert_eq!(std::mem::size_of_val(&*email_income.data), 0);
+        assert_eq!(email_income.memory(), 0);
     }
 }
