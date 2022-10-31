@@ -1,12 +1,10 @@
-use std::{panic, sync::Mutex};
-
 pub struct Stack<V: Clone> {
-    data: Mutex<Vec<V>>,
+    data: Vec<V>,
 }
 
 impl<V: Clone> Stack<V> {
     pub fn size(&self) -> usize {
-        self.data.lock().unwrap().len()
+        self.data.len()
     }
 
     pub fn is_empty(&self) -> bool {
@@ -14,29 +12,24 @@ impl<V: Clone> Stack<V> {
     }
 
     pub fn push(&mut self, value: V) {
-        self.data.lock().unwrap().push(value);
+        self.data.push(value);
     }
 
     pub fn pop(&mut self) {
-        self.data.lock().unwrap().pop();
+        self.data.pop();
     }
 
-    pub fn top(&mut self) -> V {
-        match self.data.lock().unwrap().last().cloned() {
-            Some(x) => x,
-            None => panic!(),
-        }
+    pub fn top(&mut self) -> &V {
+        self.data.last().expect("impossible to top")
     }
 
     pub fn memory(&self) -> usize {
-        std::mem::size_of_val(&*self.data.lock().unwrap().clone())
+        std::mem::size_of_val(&*self.data.clone())
     }
 }
 
 pub fn new<V: Clone>() -> Stack<V> {
-    return Stack {
-        data: Mutex::new(vec![]),
-    };
+    return Stack { data: vec![] };
 }
 
 #[cfg(test)]
