@@ -4,3 +4,6 @@ go.sum
 #rustlang
 target
 Cargo.lock
+
+# intellij
+.idea
